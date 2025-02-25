@@ -6,6 +6,13 @@ SQLALCHEMY_DB_URL = "sqlite:///./todos.db"
 
 engine = create_engine(SQLALCHEMY_DB_URL, connect_args={"check_same_thread": False})
 
-SsesionLocal = sessionmaker(autocomit=False, autoflush=False, bind=engine)
+SsesionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+def get_db():
+    db = SsesionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
