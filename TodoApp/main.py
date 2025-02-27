@@ -12,5 +12,5 @@ models.Base.metadata.create_all(bind=engine)
 
 app.include_router(todo)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     uvicorn.run(app="main:app", reload=True)
