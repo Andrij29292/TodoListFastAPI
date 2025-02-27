@@ -74,3 +74,17 @@ async def update_todo(
 
     db.merge(model)
     db.commit()
+
+
+@todo.delete("/delete/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_todo(db: DB_DEPENDENCY, todo_id: int = Path(gt=0)):
+    model = db.query(Todos).filter_by(id=todo_id).first()
+
+    if model is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "No todo with id {todo_id} were found",
+        )
+
+    db.query(Todos).filter_by(id=todo_id).delete()
+    db.commit()
