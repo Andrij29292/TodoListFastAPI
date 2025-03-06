@@ -1,43 +1,41 @@
+from fastapi import APIRouter, Path, HTTPException, status, Depends
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
-
-from DataBase.DB import get_db
 from DataBase.models import Todos
+from .schemas import TodoRequest
+from config import db_dependency
+from .token import get_current_user
 
-router = APIRouter()
 
-DB_DEPENDENCY = Annotated[Session, Depends(get_db)]
+router = APIRouter(prefix="/todos", tags=["Todo list"])
 
-
-class TodoRequest(BaseModel):
-    title: str = Field(..., max_length=50)
-    description: str = Field(..., max_length=100)
-    priority: int = Field(gt=0, le=5)
-    complete: bool = Field(default=False)
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "title": "New title",
-                "description": "New descriprion",
-                "priority": 5,
-                "complete": False,
-            }
-        }
-    }
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 @router.get("/all", status_code=status.HTTP_200_OK)
-async def read_all(db: DB_DEPENDENCY):
-    return db.query(Todos).all()
+async def read_all(user: user_dependency, db: db_dependency):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
+        )
+    return db.query(Todos).filter(Todos.owner_id == user.get("id")).all()
 
 
 @router.get("/by_id/{todo_id}", status_code=status.HTTP_200_OK)
-async def read_by_id(db: DB_DEPENDENCY, todo_id: int = Path(gt=0)):
-    todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
+async def read_by_id(
+    user: user_dependency, db: db_dependency, todo_id: int = Path(gt=0)
+):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
+        )
+
+    todo_model = (
+        db.query(Todos)
+        .filter(Todos.id == todo_id)
+        .filter(Todos.owner_id == user.get("id"))
+        .first()
+    )
 
     if todo_model is not None:
         return todo_model
@@ -46,8 +44,14 @@ async def read_by_id(db: DB_DEPENDENCY, todo_id: int = Path(gt=0)):
 
 
 @router.post("/create/", status_code=status.HTTP_201_CREATED)
-async def create_new_todo(db: DB_DEPENDENCY, req: TodoRequest):
-    model = Todos(**req.model_dump())
+async def create_new_todo(user: user_dependency, db: db_dependency, req: TodoRequest):
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
+        )
+
+    model = Todos(**req.model_dump(), owner_id=user.get("id"))
 
     db.add(model)
     db.commit()
@@ -55,11 +59,22 @@ async def create_new_todo(db: DB_DEPENDENCY, req: TodoRequest):
 
 @router.put("/update/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_todo(
-    db: DB_DEPENDENCY,
+    user: user_dependency,
+    db: db_dependency,
     req: TodoRequest,
     todo_id: int = Path(gt=0),
 ):
-    model = db.query(Todos).filter(Todos.id == todo_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
+        )
+
+    model = (
+        db.query(Todos)
+        .filter(Todos.id == todo_id)
+        .filter(Todos.owner_id == user.get("id"))
+        .first()
+    )
 
     if model is None:
         raise HTTPException(
@@ -77,8 +92,20 @@ async def update_todo(
 
 
 @router.delete("/delete/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_todo(db: DB_DEPENDENCY, todo_id: int = Path(gt=0)):
-    model = db.query(Todos).filter_by(id=todo_id).first()
+async def delete_todo(
+    user: user_dependency, db: db_dependency, todo_id: int = Path(gt=0)
+):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
+        )
+
+    model = (
+        db.query(Todos)
+        .filter(Todos.id == todo_id)
+        .filter(Todos.owner_id == user.get("id"))
+        .first()
+    )
 
     if model is None:
         raise HTTPException(
