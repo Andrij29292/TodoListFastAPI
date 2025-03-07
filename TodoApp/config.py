@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from typing import Annotated
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
 
 from DataBase.DB import get_db
 
