@@ -3,7 +3,7 @@ from passlib.context import CryptContext
 from typing import Annotated
 from fastapi import Depends
 
-from DataBase.DB import get_db
+from DataBase.db import get_db
 
 # .env file
 SECRET_KEY = "nKX6Q3Vz0fD9mA2J1pL5Ys7wTgRb8ZcMxNvKqJhCFoE="

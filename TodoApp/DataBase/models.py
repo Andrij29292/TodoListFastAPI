@@ -1,4 +1,4 @@
-from DataBase.DB import Base
+from .db import Base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 
 
@@ -6,7 +6,7 @@ class Users(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True)
+    email = Column(String)
     username = Column(String, unique=True)
     first_name = Column(String)
     last_name = Column(String)

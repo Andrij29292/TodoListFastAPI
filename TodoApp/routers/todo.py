@@ -5,7 +5,7 @@ from DataBase.models import Todos
 from .schemas import TodoRequest
 from config import db_dependency
 from .token import get_current_user
-
+from DataBase.wrapper import TodoWrapper
 
 router = APIRouter(prefix="/todos", tags=["Todo list"])
 
@@ -18,7 +18,8 @@ async def read_all(user: user_dependency, db: db_dependency):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
         )
-    return db.query(Todos).filter(Todos.owner_id == user.get("id")).all()
+
+    return TodoWrapper(db).get_all_todos(user.get("id"))
 
 
 @router.get("/by_id/{todo_id}", status_code=status.HTTP_200_OK)
@@ -30,15 +31,10 @@ async def read_by_id(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
         )
 
-    todo_model = (
-        db.query(Todos)
-        .filter(Todos.id == todo_id)
-        .filter(Todos.owner_id == user.get("id"))
-        .first()
-    )
+    model = TodoWrapper(db).get_todo_by_id(todo_id, user.get("id"))
 
-    if todo_model is not None:
-        return todo_model
+    if model is not None:
+        return model
 
     raise HTTPException(status.HTTP_404_NOT_FOUND, "Todo not found")
 
@@ -51,10 +47,8 @@ async def create_new_todo(user: user_dependency, db: db_dependency, req: TodoReq
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
         )
 
-    model = Todos(**req.model_dump(), owner_id=user.get("id"))
-
-    db.add(model)
-    db.commit()
+    model = TodoWrapper(db).create_todo(req.model_dump(), owner_id_=user.get("id"))
+    return model
 
 
 @router.put("/update/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -69,26 +63,15 @@ async def update_todo(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
         )
 
-    model = (
-        db.query(Todos)
-        .filter(Todos.id == todo_id)
-        .filter(Todos.owner_id == user.get("id"))
-        .first()
-    )
-
+    model = TodoWrapper(db).update_todo(todo_id, req.model_dump(), user.get("id"))
+    
     if model is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No todo with id {todo_id} were found",
         )
 
-    model.title = req.title
-    model.description = req.description
-    model.priority = req.priority
-    model.complete = req.complete
-
-    db.merge(model)
-    db.commit()
+    return model
 
 
 @router.delete("/delete/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -100,12 +83,7 @@ async def delete_todo(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentification Failed"
         )
 
-    model = (
-        db.query(Todos)
-        .filter(Todos.id == todo_id)
-        .filter(Todos.owner_id == user.get("id"))
-        .first()
-    )
+    model = TodoWrapper(db).delete_todo(todo_id, user.get("id"))
 
     if model is None:
         raise HTTPException(
@@ -113,5 +91,4 @@ async def delete_todo(
             "No todo with id {todo_id} were found",
         )
 
-    db.query(Todos).filter_by(id=todo_id).delete()
-    db.commit()
+    return model
