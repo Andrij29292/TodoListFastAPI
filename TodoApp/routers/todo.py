@@ -51,7 +51,7 @@ async def create_new_todo(user: user_dependency, db: db_dependency, req: TodoReq
     return model
 
 
-@router.put("/update/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/update/{todo_id}")
 async def update_todo(
     user: user_dependency,
     db: db_dependency,
@@ -74,7 +74,7 @@ async def update_todo(
     return model
 
 
-@router.delete("/delete/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/delete/{todo_id}")
 async def delete_todo(
     user: user_dependency, db: db_dependency, todo_id: int = Path(gt=0)
 ):
