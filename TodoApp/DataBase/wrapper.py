@@ -48,18 +48,11 @@ class TodoWrapper:
 
         return model
 
-    def delete_todo(self, todo_id, owner_id_):
-        model = (
+    def delete_todo(self, todo_id, user_id):
+        is_delete = (
             self.db.query(Todos)
-            .filter(Todos.id == todo_id)
-            .filter(Todos.owner_id == owner_id_)
-            .first()
+            .filter(Todos.id == todo_id, Todos.owner_id == user_id)
+            .delete()
         )
-
-        if model is None:
-            return model
-
-        self.db.query(Todos).filter(Todos.id == todo_id).delete()
         self.db.commit()
-
-        return model
+        return bool(is_delete)

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from DataBase.models import Todos
 
 
 class TodoRequest(BaseModel):
@@ -17,6 +18,16 @@ class TodoRequest(BaseModel):
             }
         }
     }
+
+
+class TodoResponse:
+    def __init__(self, response_model: Todos):
+        self.id = response_model.id
+        self.title = response_model.title
+        self.description = response_model.description
+        self.complete = response_model.complete
+        self.priority = response_model.priority
+        self.owner_id = response_model.owner_id
 
 
 class CreateUserRequest(BaseModel):

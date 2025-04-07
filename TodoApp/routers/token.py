@@ -41,13 +41,20 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_barer)]):
         )
 
 
-def create_access_token(user_name: str, user_id: int, expires_delta: timedelta) -> str:
+def create_access_token(
+    user_name: str,
+    user_id: int,
+    # role: str,
+    expires_delta: timedelta,
+) -> str:
     to_encode = {
         "sub": user_name,
         "id": user_id,
+        # "role": role,
         "exp": datetime.now(tz=UTC) + expires_delta,
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 @router.post("", response_model=Token)
 async def log_for_access_token(
