@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
-from .models import Todos
+from .models import Todos, Users
 from typing import Any
+from config import bcrypt_context
 
 
-class TodoWrapper:
+class DataBaseWrapper:
     def __init__(self, db: Session):
         self.db = db
 
@@ -56,3 +57,20 @@ class TodoWrapper:
         )
         self.db.commit()
         return bool(is_delete)
+
+    def add_user(self, new_user: dict[str, Any]):
+        model_user = Users(
+            email=new_user['email'],
+            username=new_user["username"],
+            first_name=new_user["first_name"],
+            last_name=new_user["last_name"],
+            role=new_user["role"],
+            hashed_password=bcrypt_context.hash(new_user["password"]),
+            is_active=True,
+        )
+
+        self.db.add(model_user)
+        self.db.commit()
+
+    def get_user(self, username_: str):
+        return self.db.query(Users).filter_by(username=username_).first()

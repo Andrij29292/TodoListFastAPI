@@ -7,7 +7,7 @@ from typing import Annotated
 from starlette import status
 
 from .schemas import Token
-from DataBase.models import Users
+from DataBase.wrapper import DataBaseWrapper
 from config import (
     db_dependency,
     bcrypt_context,
@@ -23,15 +23,7 @@ oauth2_barer = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_barer)]):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        user_id: int = payload.get("id")
-        if user_id is None or username is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate user.",
-            )
-
+        username, user_id = __get_current_user(token)
         return {"username": username, "id": user_id}
 
     except JWTError:
@@ -41,27 +33,38 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_barer)]):
         )
 
 
-def create_access_token(
-    user_name: str,
-    user_id: int,
-    # role: str,
-    expires_delta: timedelta,
-) -> str:
+def __get_current_user(token: str):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    username: str = payload.get("sub")
+    user_id: int = payload.get("id")
+    if user_id is None or username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate user.",
+        )
+
+    return username, user_id
+
+
+def create_access_token(user_name: str, user_id: int, expires_delta: timedelta) -> str:
     to_encode = {
         "sub": user_name,
         "id": user_id,
-        # "role": role,
         "exp": datetime.now(tz=UTC) + expires_delta,
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-@router.post("", response_model=Token)
+@router.post(
+    "",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+)
 async def log_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency,
 ):
-    user = db.query(Users).filter_by(username=form_data.username).first()
+    user = DataBaseWrapper(db).get_user(form_data.username)
 
     if not user or not bcrypt_context.verify(form_data.password, user.hashed_password):
         raise HTTPException(
