@@ -40,7 +40,7 @@ class CreateUserRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "username": "Andrii29292",
+                "username": "A",
                 "email": "somemail@gmail.com",
                 "first_name": "Andiy",
                 "last_name": "Shulla",

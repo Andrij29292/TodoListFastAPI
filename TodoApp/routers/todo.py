@@ -4,7 +4,7 @@ from typing import Annotated
 from .schemas import TodoRequest, TodoResponse
 from config import db_dependency
 from .token import get_current_user
-from DataBase.wrapper import DataBaseWrapper
+from DataBase.wrapper import TodosWrapper
 
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
@@ -21,7 +21,7 @@ router = APIRouter(
     status_code=status.HTTP_200_OK,
 )
 async def read_all(user: user_dependency, db: db_dependency):
-    return [todo for todo in DataBaseWrapper(db).get_all_todos(user.get("id"))]
+    return [todo for todo in TodosWrapper(db, user.get("id")).get_all_todos()]
 
 
 @router.get(
@@ -34,7 +34,7 @@ async def read_by_id(
     db: db_dependency,
     todo_id: int = Path(gt=0),
 ):
-    model = DataBaseWrapper(db).get_todo_by_id(todo_id, user.get("id"))
+    model = TodosWrapper(db, user.get("id")).get_todo_by_id(todo_id)
 
     if model is not None:
         return model
@@ -52,7 +52,7 @@ async def create_new_todo(
     db: db_dependency,
     req: TodoRequest,
 ):
-    model = DataBaseWrapper(db).create_todo(req.model_dump(), owner_id_=user.get("id"))
+    model = TodosWrapper(db, user.get("id")).create_todo(req.model_dump())
     return model
 
 
@@ -67,9 +67,7 @@ async def update_todo(
     todo_req: TodoRequest,
     todo_id: int = Path(gt=0),
 ):
-    model = DataBaseWrapper(db).update_todo(
-        todo_id, todo_req.model_dump(), user.get("id")
-    )
+    model = TodosWrapper(db, user.get("id")).update_todo(todo_id, todo_req.model_dump())
 
     if model is None:
         raise HTTPException(
@@ -89,7 +87,7 @@ async def delete_todo(
     db: db_dependency,
     todo_id: int = Path(gt=0),
 ):
-    if not DataBaseWrapper(db).delete_todo(todo_id, user.get("id")):
+    if not TodosWrapper(db, user.get("id")).delete_todo(todo_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No todo with id {todo_id} were found",

@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_todos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: todosdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ./TodoApp
+    container_name: fastapi_app
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://postgres:1234@db:5432/todosdb"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./TodoApp:/app
+
+volumes:
+  postgres_data:

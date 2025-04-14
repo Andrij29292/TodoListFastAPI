@@ -7,7 +7,7 @@ from typing import Annotated
 from starlette import status
 
 from .schemas import Token
-from DataBase.wrapper import DataBaseWrapper
+from DataBase.wrapper import UsersWrapper
 from config import (
     db_dependency,
     bcrypt_context,
@@ -64,7 +64,7 @@ async def log_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency,
 ):
-    user = DataBaseWrapper(db).get_user(form_data.username)
+    user = UsersWrapper(db).get_user(form_data.username)
 
     if not user or not bcrypt_context.verify(form_data.password, user.hashed_password):
         raise HTTPException(
