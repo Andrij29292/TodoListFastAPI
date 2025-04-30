@@ -3,7 +3,8 @@ import uvicorn
 
 import DataBase.models as models
 from DataBase.db import engine
-from routers import todo, auth
+from routers.business import todo
+from routers.auth import auth
 
 
 app = FastAPI()

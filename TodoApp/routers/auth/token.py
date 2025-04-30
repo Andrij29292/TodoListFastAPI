@@ -6,9 +6,9 @@ from pytz import UTC
 from typing import Annotated
 from starlette import status
 
-from .schemas import Token
-from DataBase.wrapper import UsersWrapper
-from config import (
+from ..schemas import Token
+from ...DataBase.wrapper import UsersWrapper
+from ...config import (
     db_dependency,
     bcrypt_context,
     SECRET_KEY,

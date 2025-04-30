@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Path, HTTPException, status, Depends
 from typing import Annotated
 
-from .schemas import TodoRequest, TodoResponse
-from config import db_dependency
-from .token import get_current_user
-from DataBase.wrapper import TodosWrapper
+from ..schemas import TodoRequest, TodoResponse
+from ...config import db_dependency
+from ..auth.token import get_current_user
+from ...DataBase.wrapper import TodosWrapper
 
 user_dependency = Annotated[dict, Depends(get_current_user)]
 

@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from DataBase.models import Todos
 
 
 class TodoRequest(BaseModel):
